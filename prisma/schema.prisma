@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum NotificationType {
+  WORKSPACE_INVITATION
+  WORKSPACE_MEMBER_JOINED
+  TASK_ASSIGNED
+  TASK_MENTION
+  COMMENT_MENTION
+  TASK_UPDATED
+  BOARD_CREATED
+}
+
+enum ActivityAction {
+  WORKSPACE_CREATED
+  WORKSPACE_UPDATED
+  MEMBER_JOINED
+  MEMBER_REMOVED
+  ROLE_CHANGED
+  INVITATION_SENT
+  BOARD_CREATED
+  BOARD_UPDATED
+  BOARD_DELETED
+  COLUMN_CREATED
+  COLUMN_UPDATED
+  COLUMN_DELETED
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_MOVED
+  TASK_DELETED
+  TASK_ASSIGNED
+  COMMENT_ADDED
+  COMMENT_DELETED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+ ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  memberships WorkspaceMember[]
+  invitationsReceived Invitation[] @relation("InvitationRecipient")
+  invitationsSent Invitation[] @relation("InvitationSender")
+  notifications Notification[]
+  activityLogs ActivityLog[]
+  comments Comment[]
+  tasksAssigned Task[] @relation("TaskAssignee")
+  tasksCreated Task[] @relation("TaskCreator")
+  tasksUpdated Task[] @relation("TaskUpdater")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+owner User @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members WorkspaceMember[]
+  invitations Invitation[]
+  boards Board[]
+  activityLogs ActivityLog[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  role        Role     @default(MEMBER)
+  joinedAt    DateTime @default(now())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  email       String
+  role        Role             @default(MEMBER)
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  senderId String?
+  sender User? @relation("InvitationSender", fields: [senderId], references: [id])
+
+  recipientId String?
+  recipient User? @relation("InvitationRecipient", fields: [recipientId], references: [id])
+
+  @@map("invitations")
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  columns Column[]
+  activityLogs ActivityLog[]
+
+  @@map("boards")
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  position  Int      @default(0)
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boardId String
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  @@map("columns")
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  position    Int      @default(0)
+  priority    String?
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  columnId String
+  column Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  assigneeId String?
+  assignee User? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  creatorId String
+  creator User @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  updaterId String?
+  updater User? @relation("TaskUpdater", fields: [updaterId], references: [id])
+
+  comments Comment[]
+  activityLogs ActivityLog[]
+
+  @@map("tasks")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId String
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  mentions String[] @default([])
+
+  activityLogs ActivityLog[]
+
+  @@map("comments")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          String        @id @default(cuid())
+  action      ActivityAction
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  boardId String?
+  board Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
