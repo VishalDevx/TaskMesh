@@ -56,7 +56,7 @@ export interface TaskWithDetails {
   description: string | null;
   position: number;
   priority: string | null;
-  dueDate: Date | null;
+  dueDate: string | null;
   columnId: string;
   assigneeId: string | null;
   creatorId: string;

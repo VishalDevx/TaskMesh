@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { ActivityAction } from '@prisma/client';
+import { ActivityAction, Prisma } from '@prisma/client';
 
 export class ActivityRepository {
   async create(data: {
@@ -8,7 +8,7 @@ export class ActivityRepository {
     entityId: string;
     userId: string;
     workspaceId: string;
-    metadata?: Record<string, unknown>;
+    metadata?: Prisma.InputJsonValue;
     taskId?: string;
     boardId?: string;
     commentId?: string;

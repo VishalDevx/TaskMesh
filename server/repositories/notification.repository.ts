@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 
 export class NotificationRepository {
   async create(data: {
@@ -7,7 +7,7 @@ export class NotificationRepository {
     title: string;
     message: string;
     userId: string;
-    data?: Record<string, unknown>;
+    data?: Prisma.InputJsonValue;
   }) {
     return prisma.notification.create({
       data,

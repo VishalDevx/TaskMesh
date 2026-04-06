@@ -6,9 +6,14 @@ import { useSession } from 'next-auth/react';
 import {
   ClientToServerEvents,
   ServerToClientEvents,
+  CreateTaskPayload,
+  UpdateTaskPayload,
+  CreateColumnPayload,
+  UpdateColumnPayload,
 } from '@/types/socket';
 import { useBoardStore } from '@/stores/board-store';
 import { usePresenceStore } from '@/stores/presence-store';
+import { ColumnWithTasks, TaskWithDetails } from '@/types';
 import toast from 'react-hot-toast';
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -46,8 +51,7 @@ export function useSocket() {
       toast.error(data.message);
     });
 
-    return () => {
-    };
+    return () => {};
   }, [session?.user?.id]);
 
   const joinWorkspace = useCallback((workspaceId: string) => {
@@ -78,7 +82,16 @@ export function useSocket() {
 export function useBoardSocket(boardId: string) {
   const socketRef = useRef<TypedSocket | null>(null);
   const { data: session } = useSession();
-  const { data: board, updateTask, addTask, removeTask, moveTask, updateColumn, addColumn, removeColumn } = useBoardStore();
+  const {
+    board,
+    updateTask,
+    addTask,
+    removeTask,
+    moveTask,
+    updateColumn,
+    addColumn,
+    removeColumn,
+  } = useBoardStore();
   const { setPresence, removePresence, setTyping, clearTyping } = usePresenceStore();
 
   useEffect(() => {
@@ -140,13 +153,13 @@ export function useBoardSocket(boardId: string) {
 
     socket.on('column:created', (data) => {
       if (data.userId !== session.user?.id && data.boardId === boardId) {
-        addColumn(data.column);
+        addColumn(data.column as ColumnWithTasks);
       }
     });
 
     socket.on('column:updated', (data) => {
       if (data.userId !== session.user?.id && data.boardId === boardId) {
-        updateColumn(data.column);
+        updateColumn(data.column as Partial<ColumnWithTasks> & { id: string });
       }
     });
 
@@ -191,33 +204,67 @@ export function useBoardSocket(boardId: string) {
     };
   }, [session?.user?.id, boardId]);
 
-  const emitTaskCreate = useCallback((task: any) => {
-    socket?.emit('task:create', { task, boardId });
-  }, [boardId]);
+  const emitTaskCreate = useCallback(
+    (task: CreateTaskPayload) => {
+      socket?.emit('task:create', { ...task, boardId });
+    },
+    [boardId]
+  );
 
-  const emitTaskUpdate = useCallback((task: any) => {
-    socket?.emit('task:update', { task, boardId });
-  }, [boardId]);
+  const emitTaskUpdate = useCallback(
+    (task: UpdateTaskPayload) => {
+      socket?.emit('task:update', {
+        taskId: task.taskId,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        dueDate: task.dueDate,
+        assigneeId: task.assigneeId,
+        boardId,
+      });
+    },
+    [boardId]
+  );
 
-  const emitTaskMove = useCallback((data: any) => {
-    socket?.emit('task:move', { ...data, boardId });
-  }, [boardId]);
+  const emitTaskMove = useCallback(
+    (data: any) => {
+      socket?.emit('task:move', { ...data, boardId });
+    },
+    [boardId]
+  );
 
-  const emitTaskDelete = useCallback((taskId: string) => {
-    socket?.emit('task:delete', { taskId, boardId });
-  }, [boardId]);
+  const emitTaskDelete = useCallback(
+    (taskId: string) => {
+      socket?.emit('task:delete', { taskId, boardId });
+    },
+    [boardId]
+  );
 
-  const emitColumnCreate = useCallback((column: any) => {
-    socket?.emit('column:create', { column, boardId });
-  }, [boardId]);
+  const emitColumnCreate = useCallback(
+    (column: CreateColumnPayload) => {
+      socket?.emit('column:create', { name: column.name, boardId, color: column.color });
+    },
+    [boardId]
+  );
 
-  const emitColumnUpdate = useCallback((column: any) => {
-    socket?.emit('column:update', { column, boardId });
-  }, [boardId]);
+  const emitColumnUpdate = useCallback(
+    (column: UpdateColumnPayload) => {
+      socket?.emit('column:update', {
+        columnId: column.columnId,
+        name: column.name,
+        color: column.color,
+        boardId,
+      });
+    },
+    [boardId]
+  );
 
-  const emitColumnDelete = useCallback((columnId: string) => {
-    socket?.emit('column:delete', { columnId, boardId });
-  }, [boardId]);
+  const emitColumnDelete = useCallback(
+    (columnId: string) => {
+      socket?.emit('column:delete', { columnId, boardId });
+    },
+    [boardId]
+  );
 
   const emitTypingStart = useCallback((taskId: string) => {
     socket?.emit('typing:start', { taskId });

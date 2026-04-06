@@ -3,7 +3,12 @@ import { Role } from '@prisma/client';
 import { slugify } from '@/lib/utils';
 
 export class WorkspaceRepository {
-  async create(data: { name: string; description?: string; logo?: string; ownerId: string }) {
+  async create(data: {
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    ownerId: string;
+  }) {
     const slug = slugify(data.name);
 
     const existingWorkspace = await prisma.workspace.findUnique({
@@ -128,7 +133,10 @@ export class WorkspaceRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; logo?: string }) {
+  async update(
+    id: string,
+    data: { name?: string; description?: string | null; logo?: string | null }
+  ) {
     return prisma.workspace.update({
       where: { id },
       data,

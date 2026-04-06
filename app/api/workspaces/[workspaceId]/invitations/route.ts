@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { invitationRepository, workspaceRepository, prisma } from '@/server/repositories';
+import { invitationRepository, workspaceRepository } from '@/server/repositories';
+import prisma from '@/lib/prisma';
 import { rbacService, activityService, notificationService } from '@/server/services';
 import { createInvitationSchema } from '@/lib/validations';
 import { ZodError } from 'zod';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { workspaceId: string } }) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isMember = await rbacService.isWorkspaceMember(
-      session.user.id,
-      params.workspaceId
-    );
+    const isMember = await rbacService.isWorkspaceMember(session.user.id, params.workspaceId);
     if (!isMember) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -28,17 +23,11 @@ export async function GET(
     return NextResponse.json(invitations);
   } catch (error) {
     console.error('Error fetching invitations:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { workspaceId: string } }) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -67,10 +56,7 @@ export async function POST(
     });
 
     if (existingMember?.memberships.length) {
-      return NextResponse.json(
-        { error: 'User is already a member' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'User is already a member' }, { status: 400 });
     }
 
     const invitation = await invitationRepository.create({
@@ -89,7 +75,7 @@ export async function POST(
       await notificationService.notifyWorkspaceInvitation(
         invitee.id,
         workspace?.name || 'Workspace',
-        session.user.name,
+        session.user.name ?? null,
         params.workspaceId
       );
     }
@@ -103,9 +89,6 @@ export async function POST(
       );
     }
     console.error('Error creating invitation:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

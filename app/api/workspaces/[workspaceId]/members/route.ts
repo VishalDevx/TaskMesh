@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { workspaceRepository, prisma } from '@/server/repositories';
+import { workspaceRepository } from '@/server/repositories';
+import prisma from '@/lib/prisma';
 import { rbacService, activityService } from '@/server/services';
 import { updateMemberRoleSchema } from '@/lib/validations';
-import { ZodError, Role } from 'zod';
+import { ZodError } from 'zod';
+import { Role } from '@prisma/client';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { workspaceId: string } }) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isMember = await rbacService.isWorkspaceMember(
-      session.user.id,
-      params.workspaceId
-    );
+    const isMember = await rbacService.isWorkspaceMember(session.user.id, params.workspaceId);
     if (!isMember) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -28,17 +24,11 @@ export async function GET(
     return NextResponse.json(members);
   } catch (error) {
     console.error('Error fetching members:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { workspaceId: string } }) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -49,10 +39,7 @@ export async function PATCH(
     const { userId, role } = body;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
     const canManage = await rbacService.canManageMember(
@@ -67,10 +54,7 @@ export async function PATCH(
     const data = updateMemberRoleSchema.parse({ role });
 
     if (role === Role.OWNER) {
-      return NextResponse.json(
-        { error: 'Cannot assign owner role' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot assign owner role' }, { status: 400 });
     }
 
     const member = await workspaceRepository.updateMemberRole(
@@ -79,12 +63,7 @@ export async function PATCH(
       data.role
     );
 
-    await activityService.logRoleChanged(
-      params.workspaceId,
-      session.user.id,
-      userId,
-      data.role
-    );
+    await activityService.logRoleChanged(params.workspaceId, session.user.id, userId, data.role);
 
     return NextResponse.json(member);
   } catch (error) {
@@ -95,10 +74,7 @@ export async function PATCH(
       );
     }
     console.error('Error updating member role:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -116,10 +92,7 @@ export async function DELETE(
     const userId = searchParams.get('userId');
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
     const canRemove = await rbacService.canManageMember(
@@ -133,10 +106,7 @@ export async function DELETE(
 
     const memberToRemove = await workspaceRepository.getMember(params.workspaceId, userId);
     if (memberToRemove?.role === Role.OWNER) {
-      return NextResponse.json(
-        { error: 'Cannot remove workspace owner' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot remove workspace owner' }, { status: 400 });
     }
 
     await workspaceRepository.removeMember(params.workspaceId, userId);
@@ -151,9 +121,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error removing member:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

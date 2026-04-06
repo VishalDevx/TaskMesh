@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ interface InvitationData {
   } | null;
 }
 
-export default function InvitationPage() {
+function InvitationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -142,9 +142,7 @@ export default function InvitationPage() {
             <LayoutGrid className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-xl">Workspace Invitation</CardTitle>
-          <CardDescription>
-            You&apos;ve been invited to join a workspace
-          </CardDescription>
+          <CardDescription>You&apos;ve been invited to join a workspace</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-lg border p-4">
@@ -170,7 +168,7 @@ export default function InvitationPage() {
           </div>
 
           {invitation.sender && (
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-center text-sm text-muted-foreground">
               Invited by {invitation.sender.name || 'Someone'}
             </p>
           )}
@@ -189,11 +187,7 @@ export default function InvitationPage() {
               )}
               Decline
             </Button>
-            <Button
-              className="flex-1"
-              onClick={handleAccept}
-              disabled={isAccepting || isRejecting}
-            >
+            <Button className="flex-1" onClick={handleAccept} disabled={isAccepting || isRejecting}>
               {isAccepting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -205,5 +199,19 @@ export default function InvitationPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function InvitationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <InvitationContent />
+    </Suspense>
   );
 }

@@ -105,7 +105,9 @@ class SocketService {
   private async handleWorkspaceLeave(socket: TypedSocket, data: { workspaceId: string }) {
     const { workspaceId } = data;
     socket.leave(`workspace:${workspaceId}`);
-    socket.to(`workspace:${workspaceId}`).emit('workspace:member_left', { userId: socket.data.userId! });
+    socket
+      .to(`workspace:${workspaceId}`)
+      .emit('workspace:member_left', { userId: socket.data.userId! });
   }
 
   private async handleBoardJoin(socket: TypedSocket, data: { boardId: string }) {
@@ -113,7 +115,7 @@ class SocketService {
     socket.data.boardId = boardId;
     socket.join(`board:${boardId}`);
 
-    await this.updatePresence(socket.data.userId!, boardId);
+    await this.updatePresence(socket, socket.data.userId!, boardId);
 
     const presenceUsers = await this.getBoardPresence(boardId);
 
@@ -154,7 +156,7 @@ class SocketService {
 
     if (!boardId) return;
 
-    await this.updatePresence(userId, boardId, data.isTyping);
+    await this.updatePresence(socket, userId, boardId, data.isTyping);
 
     socket.to(`board:${boardId}`).emit('presence:update', {
       id: userId,
@@ -281,7 +283,12 @@ class SocketService {
     }
   }
 
-  private async updatePresence(userId: string, boardId: string, isTyping = false) {
+  private async updatePresence(
+    socket: TypedSocket,
+    userId: string,
+    boardId: string,
+    isTyping = false
+  ) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, image: true },

@@ -1,4 +1,4 @@
-import { ActivityAction } from '@prisma/client';
+import { ActivityAction, Prisma } from '@prisma/client';
 import { activityRepository } from '@/server/repositories';
 
 export class ActivityService {
@@ -8,7 +8,7 @@ export class ActivityService {
     entityId: string,
     userId: string,
     workspaceId: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Prisma.InputJsonValue,
     taskId?: string,
     boardId?: string,
     commentId?: string
@@ -60,7 +60,12 @@ export class ActivityService {
     );
   }
 
-  async logMemberRemoved(workspaceId: string, userId: string, memberId: string, memberName: string) {
+  async logMemberRemoved(
+    workspaceId: string,
+    userId: string,
+    memberId: string,
+    memberName: string
+  ) {
     return this.log(
       ActivityAction.MEMBER_REMOVED,
       'workspace_member',
@@ -143,12 +148,7 @@ export class ActivityService {
     );
   }
 
-  async logCommentAdded(
-    commentId: string,
-    taskId: string,
-    workspaceId: string,
-    userId: string
-  ) {
+  async logCommentAdded(commentId: string, taskId: string, workspaceId: string, userId: string) {
     return this.log(
       ActivityAction.COMMENT_ADDED,
       'comment',

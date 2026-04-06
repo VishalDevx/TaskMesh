@@ -112,7 +112,15 @@ export class BoardRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; icon?: string; color?: string }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      icon?: string | null;
+      color?: string | null;
+    }
+  ) {
     return prisma.board.update({
       where: { id },
       data,

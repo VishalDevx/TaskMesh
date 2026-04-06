@@ -39,13 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SortableTaskCard } from '@/features/board/components/sortable-task-card';
 import { TaskCard } from '@/features/board/components/task-card';
 import { ColumnHeader } from '@/features/board/components/column-header';
-import {
-  ArrowLeft,
-  Plus,
-  Loader2,
-  Users,
-  MessageSquare,
-} from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Users, MessageSquare } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { TaskWithDetails, ColumnWithTasks } from '@/types';
 
@@ -88,7 +82,7 @@ export default function BoardPage() {
     );
     const task = activeColumn?.tasks.find((task) => task.id === active.id);
     if (task) {
-      setActiveTask(task);
+      setActiveTask(task as TaskWithDetails);
     }
   };
 
@@ -231,13 +225,13 @@ export default function BoardPage() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8 border-2 border-white">
-                <AvatarFallback className="bg-blue-500 text-white text-xs">JD</AvatarFallback>
+                <AvatarFallback className="bg-blue-500 text-xs text-white">JD</AvatarFallback>
               </Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white -ml-2">
-                <AvatarFallback className="bg-green-500 text-white text-xs">MK</AvatarFallback>
+              <Avatar className="-ml-2 h-8 w-8 border-2 border-white">
+                <AvatarFallback className="bg-green-500 text-xs text-white">MK</AvatarFallback>
               </Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white -ml-2">
-                <AvatarFallback className="bg-purple-500 text-white text-xs">AS</AvatarFallback>
+              <Avatar className="-ml-2 h-8 w-8 border-2 border-white">
+                <AvatarFallback className="bg-purple-500 text-xs text-white">AS</AvatarFallback>
               </Avatar>
               <Button variant="ghost" size="sm" className="ml-2">
                 <Users className="mr-2 h-4 w-4" />
@@ -255,7 +249,7 @@ export default function BoardPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 h-full">
+          <div className="flex h-full gap-4">
             {board.columns.map((column) => (
               <div
                 key={column.id}
@@ -353,12 +347,7 @@ export default function BoardPage() {
 
           <DragOverlay>
             {activeTask && (
-              <TaskCard
-                task={activeTask}
-                workspaceId={workspaceId}
-                boardId={boardId}
-                isDragging
-              />
+              <TaskCard task={activeTask} workspaceId={workspaceId} boardId={boardId} isDragging />
             )}
           </DragOverlay>
         </DndContext>

@@ -47,6 +47,7 @@ async function main() {
       name: 'Acme Corp',
       slug: 'acme-corp',
       description: 'Main workspace for Acme Corporation',
+      ownerId: user1.id,
       members: {
         create: [
           { userId: user1.id, role: Role.OWNER },
@@ -64,6 +65,7 @@ async function main() {
       name: 'Startup XYZ',
       slug: 'startup-xyz',
       description: 'Workspace for Startup XYZ team',
+      ownerId: user2.id,
       members: {
         create: [
           { userId: user2.id, role: Role.OWNER },

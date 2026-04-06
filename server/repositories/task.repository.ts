@@ -98,9 +98,9 @@ export class TaskRepository {
     id: string,
     data: {
       title?: string;
-      description?: string;
-      priority?: string;
-      dueDate?: Date | null;
+      description?: string | null;
+      priority?: string | null;
+      dueDate?: string | null;
       assigneeId?: string | null;
       updaterId: string;
     }
@@ -167,14 +167,23 @@ export class TaskRepository {
 
     await prisma.$transaction(async (tx) => {
       if (sourceColumnId === destinationColumnId) {
-        await tx.task.updateMany({
-          where: {
-            columnId: sourceColumnId,
-            position: { gte: task.position, not: task.id },
-            position: { gte: newPosition },
-          },
-          data: { position: { increment: 1 } },
-        });
+        if (task.position < newPosition) {
+          await tx.task.updateMany({
+            where: {
+              columnId: sourceColumnId,
+              position: { gt: task.position, lte: newPosition },
+            },
+            data: { position: { decrement: 1 } },
+          });
+        } else if (task.position > newPosition) {
+          await tx.task.updateMany({
+            where: {
+              columnId: sourceColumnId,
+              position: { gte: newPosition, lt: task.position },
+            },
+            data: { position: { increment: 1 } },
+          });
+        }
       } else {
         await tx.task.updateMany({
           where: {

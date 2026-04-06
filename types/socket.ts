@@ -29,7 +29,7 @@ export interface ServerToClientEvents {
 
   'notification:new': (data: { notification: NotificationPayload }) => void;
 
-  'error': (data: { message: string; code: string }) => void;
+  error: (data: { message: string; code: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -93,7 +93,11 @@ export interface ColumnSocketPayload {
     tasks: Array<{
       id: string;
       title: string;
+      description: string | null;
       position: number;
+      priority: string | null;
+      dueDate: string | null;
+      columnId: string;
     }>;
   };
   userId: string;
@@ -137,6 +141,7 @@ export interface UpdateTaskPayload {
   priority?: string;
   dueDate?: string;
   assigneeId?: string;
+  boardId: string;
 }
 
 export interface MoveTaskPayload {
@@ -157,6 +162,7 @@ export interface UpdateColumnPayload {
   columnId: string;
   name?: string;
   color?: string;
+  boardId: string;
 }
 
 export interface CreateCommentPayload {

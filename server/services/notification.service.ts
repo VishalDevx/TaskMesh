@@ -1,4 +1,4 @@
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 import { notificationRepository } from '@/server/repositories';
 import prisma from '@/lib/prisma';
 
@@ -8,7 +8,7 @@ export class NotificationService {
     title: string,
     message: string,
     userId: string,
-    data?: Record<string, unknown>
+    data?: Prisma.InputJsonValue
   ) {
     return notificationRepository.create({ type, title, message, userId, data });
   }
@@ -48,11 +48,7 @@ export class NotificationService {
     );
   }
 
-  async notifyMemberJoined(
-    workspaceId: string,
-    memberName: string,
-    memberId: string
-  ) {
+  async notifyMemberJoined(workspaceId: string, memberName: string, memberId: string) {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       include: {
@@ -126,11 +122,7 @@ export class NotificationService {
     );
   }
 
-  async notifyBoardCreated(
-    workspaceId: string,
-    boardName: string,
-    creatorId: string
-  ) {
+  async notifyBoardCreated(workspaceId: string, boardName: string, creatorId: string) {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       include: {

@@ -1,12 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import type { inferRouterOutputs } from '@trpc/server';
-import { type AppRouter } from '@/server/routers/_app';
-import { trpc } from '@/lib/trpc';
 import toast from 'react-hot-toast';
-
-type RouterOutput = inferRouterOutputs<AppRouter>;
 
 export function useWorkspaces() {
   return useQuery({
@@ -143,9 +138,7 @@ export function useBoard(workspaceId: string, boardId: string) {
   return useQuery({
     queryKey: ['board', boardId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/workspaces/${workspaceId}/boards/${boardId}`
-      );
+      const response = await fetch(`/api/workspaces/${workspaceId}/boards/${boardId}`);
       if (!response.ok) throw new Error('Failed to fetch board');
       return response.json();
     },
@@ -291,13 +284,7 @@ export function useDeleteTask() {
 
 export function useCreateComment() {
   return useMutation({
-    mutationFn: async ({
-      taskId,
-      content,
-    }: {
-      taskId: string;
-      content: string;
-    }) => {
+    mutationFn: async ({ taskId, content }: { taskId: string; content: string }) => {
       const response = await fetch(`/api/tasks/${taskId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
