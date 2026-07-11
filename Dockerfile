@@ -12,11 +12,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p /app/public
 RUN npx prisma generate
+ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN apk add --no-cache openssl && ln -s /usr/lib/libssl.so.3 /usr/lib/libssl.so
 
@@ -33,7 +34,7 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 USER nextjs
 
 EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
